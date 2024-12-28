@@ -1,0 +1,10 @@
+openai
+langchain
+langchain-openai
+python-dotenv
+langchainhub
+pandas
+openpyxl
+fastapi
+uvicorn
+fuzzywuzzy
