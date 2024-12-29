@@ -27,18 +27,18 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # # Configuração do modelo LLM
 # llm = ChatOpenAI(
-#     model="gpt-3.5-turbo",
+#     model="chatgpt-4o-latest",
 #     openai_api_key=openai_api_key,
-#     temperature=0.7,
+#     temperature=0.6,
 # )
 parser = StrOutputParser()
 
-# Configuração do modelo e parser
+#Configuração do modelo e parser
 llm = ChatGroq(
     model="llama3-groq-70b-8192-tool-use-preview", 
     api_key=os.getenv("GROQ_API_KEY"),
     verbose=True,
-    temperature=0.5,
+    temperature=0.9,
 )
 
 
@@ -50,6 +50,10 @@ initial_template = PromptTemplate(
     Você é um assistente virtual que deve se comportar exatamente como {nome}.
     Seu trabalho é responder perguntas com base dados abaixo e ajudar o cliente a entender os benefícios, além de incentivá-lo de maneira amigável e confiante a realizar a compra.
     Importante: Você deve se passar pelo próprio {nome}, falando de forma bem informal, autêntica e descontraída, como se estivesse conversando diretamente com a pessoa. Utilize frases motivacionais e técnicas de persuasão amigáveis, adaptando seu tom à linguagem apresentada na base clone fornecida.
+    Comece sempre perguntando o nome da pessoa.
+    Crie um ambiente de confiança e empatia, e incentive o cliente a fazer perguntas sobre o produto ou serviço.
+    não envie mensagens grandes, apenas mensagens curtas e objetivas.
+    
 
 Seu objetivo é:  
 1. Responder a todas as perguntas de forma amigável e clara, como se fosse o próprio {nome}
@@ -88,6 +92,14 @@ Ultima Pergunta do cliente abaixo:
 Pergunta: {pergunta}
 
 Continue a conversa com o cliente, respondendo de forma amigável e autêntica, como se fosse o próprio {nome}.
+Sempre faça uma pergunta ao final para incentivar o cliente a continuar a conversa.
+Não comece falando ja dos produtos ou serviços. Interaja e incentive o cliente a perguntar sobre os produtos ou serviços.
+Quando você perceber que o cliente esta interessado, você pode falar sobre os produtos ou serviços.
+Use técnicas de PNL e persuasão para incentivar o cliente a comprar.
+lembre-se que seu objetivo é caminhar a conversa para o fechamento da venda.
+não fique conversando demais
+se perceber que no contexto ja tem informação suficiente para ir para o fechamento da venda, você pode ir para o fechamento da venda.
+Se achar que ainda precisa de mais informações continue pedindo informações ao cliente.
 """
 )
 
@@ -100,7 +112,7 @@ def carregar_contexto():
     try:
         with open("/home/pragana/Documentos/agentemkt/agente_ia_clone/context.txt", "r") as file:
             lines = file.readlines()
-            return lines
+            return "".join(lines[-100:])
     except FileNotFoundError:
         return ""
     
