@@ -8,15 +8,42 @@ from pydantic import BaseModel
 import os
 import re
 from langchain_groq import ChatGroq
+from supabase import create_client, Client
 
 # Carrega as variáveis de ambiente
 load_dotenv()
 
 
-
+# python
+usuario_id = "65893036-8fd4-4f0c-90a2-f32ce8c46c56"
+organization_uuid = "0c43a756-80da-4ee7-a38f-03b1e27396f4"
 
 # Configuração da API OpenAI
 openai_api_key = os.getenv("OPENAI_API_KEY")
+SUPABASE_URL = "https://kmfcaehfwzrpbdanhfyz.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmNhZWhmd3pycGJkYW5oZnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU5MjUxNDYsImV4cCI6MjA1MTUwMTE0Nn0.ZLtaZ6vuuoam2If4ItpG69LkrlA1mudSX9dCXYP-QUM"
+
+def conectar_supabase():
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+
+# python
+def carregar_dados(usuario, organizacao):
+    supabase: Client = conectar_supabase()
+    #resultado = supabase.table("ai_agent_configs").select("*").execute()
+    # Correct
+    resultado = (supabase.table("ai_agent_configs").select("*").eq("usuario_m", usuario_id).eq("organization_id", organization_uuid).execute())
+
+    if not resultado.data:
+        return None, None
+
+    registro = resultado.data[0]
+    baseclone = registro["personality"]
+    nome = registro["agent_name"]
+    contexto = registro["contexto"]
+    treinamento = registro["treinamento"]
+    return baseclone, nome, contexto, treinamento
 
 
 # # Configuração do modelo e parser
@@ -107,33 +134,11 @@ Se achar que ainda precisa de mais informações continue pedindo informações 
 # Configuração do chat chain inicial
 initial_chain = initial_template | llm | parser
 
-# Função para abrir o arquivo context.txt e obter as últimas linhas
-def carregar_contexto():
-    try:
-        with open("/home/pragana/Documentos/agentemkt/agente_ia_clone/context.txt", "r") as file:
-            lines = file.readlines()
-            return "".join(lines[-100:])
-    except FileNotFoundError:
-        return ""
     
-# Função para abrir o arquivo baseclone.txt e obter o texto
-def carregar_baseclone():
-    with open("/home/pragana/Documentos/agentemkt/agente_ia_clone/baseclone.txt", "r") as file:
-        return file.read()
-    
-# Função para carregar arquivo de treinamento
-def carregar_treinamento():
-    with open("/home/pragana/Documentos/agentemkt/agente_ia_clone/treinamento.txt", "r") as file:
-        return file.read()
-    
-# Carregar a base clone
-baseclone = carregar_baseclone()
-# Carregar o treinamento
-treinamento = carregar_treinamento()
-# Carregar o contexto do arquivo
-contexto = carregar_contexto()
-# Informações sobre o cliente: 
-Nome = "Julio Tavares"
+baseclone, nome, treinamento, contexto = carregar_dados(usuario_id, organization_uuid)
+
+
+print(baseclone, nome)
 
 
 # Inicializar FastAPI
@@ -157,24 +162,26 @@ app.add_middleware(
 # Modelo para a pergunta
 class Pergunta(BaseModel):
     pergunta: str
+    nome: str | None = None  # Optional field
+    numero: str | None = None # Optional field
 
 # Endpoint para o chatbot
 @app.post("/chat")
 async def chat(pergunta: Pergunta):
     try:
+        # Print the additional fields
+        print(f"Nome do usuário: {pergunta.nome}")
+        print(f"Número do usuário: {pergunta.numero}")
+        
         # Processar com invoke usando dicionário
         resposta = initial_chain.invoke({
             "contexto": contexto,
-            "nome": Nome,
+            "nome": nome,
             "treinamento": treinamento,
             "baseclone": baseclone,
             "pergunta": pergunta.pergunta
         })
 
-        # Salvar no arquivo context.txt
-        with open("/home/pragana/Documentos/agentemkt/agente_ia_clone/context.txt", "a") as file:
-            file.write(f"user: {pergunta.pergunta}\n")
-            file.write(f"bot: {resposta}\n\n")
 
         return {"resposta": resposta}
 

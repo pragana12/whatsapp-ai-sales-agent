@@ -154,3 +154,5 @@ Este script combina diversas ferramentas para criar um chatbot que responde perg
 
 Assim, o script funciona como um "cérebro digital" que entende perguntas, busca informações relevantes e gera respostas de maneira personalizada e persuasiva.
 
+
+5583999722049
